@@ -1,8 +1,11 @@
-from invoke import task
 import json
 import os
 import platform
 import sys
+
+from invoke import task
+from invoke.context import Context
+from typing import List
 
 @task
 def invoke_choose(c):
@@ -67,3 +70,25 @@ def vscode_settings_use_invoke(c):
         "python.pythonPath" : sys.executable
     }
     print(json.dumps(settings))
+
+@task
+def project_used_pyenv(c):
+    context: Context = c
+    result = context.run('jump pins', hide="out")
+    pins: List[str] = result.stdout.split("\n")
+    for pin in pins:  # type: str
+        pin_data = pin.split("\t")
+        if (len(pin_data) == 2):
+            tag, path = pin_data
+            if (os.path.exists(path + "/.python-version")):
+                print(tag, path)
+
+@task
+def python_commands(c):
+    context: Context = c
+    context.run('inv executable | xargs dirname | xargs lsd --almost-all --long --color always --icon always --icon-theme fancy')
+
+@task
+def python_commands_html_copy(c):
+    context: Context = c
+    context.run('inv python-commands | ansifilter --encoding=utf-8 --rtf | textutil -stdin -stdout -convert html | copyq copy text/html -')
