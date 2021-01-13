@@ -1,0 +1,42 @@
+digraph ninja {
+rankdir="LR"
+node [fontsize=10, shape=box, height=0.25]
+edge [fontsize=10]
+"0x7fefdb507510" [label="all"]
+"0x7fefdb5079a0" -> "0x7fefdb507510" [label=" phony"]
+"0x7fefdb5079a0" [label="README.md"]
+"0x7fefdb508ab0" [label="pandocomatic", shape=ellipse]
+"0x7fefdb508ab0" -> "0x7fefdb5079a0"
+"0x7fefdb5080d0" -> "0x7fefdb508ab0" [arrowhead=none]
+"0x7fefdb508a50" -> "0x7fefdb508ab0" [arrowhead=none]
+"0x7fefdb5080d0" [label="maskfile.md"]
+"0x7fefdb508a50" [label="README-template"]
+"0x7fefdb508b30" [label="phony", shape=ellipse]
+"0x7fefdb508b30" -> "0x7fefdb508a50"
+"0x7fefdb507e10" -> "0x7fefdb508b30" [arrowhead=none]
+"0x7fefdb508e60" -> "0x7fefdb508b30" [arrowhead=none]
+"0x7fefdb508010" -> "0x7fefdb508b30" [arrowhead=none]
+"0x7fefdb508280" -> "0x7fefdb508b30" [arrowhead=none]
+"0x7fefdb5084e0" -> "0x7fefdb508b30" [arrowhead=none]
+"0x7fefdb5086f0" -> "0x7fefdb508b30" [arrowhead=none]
+"0x7fefdb5089f0" -> "0x7fefdb508b30" [arrowhead=none]
+"0x7fefdb507e10" [label="build/pandoc-lua-filters/include-files/include-files.lua"]
+"0x7fefdb507da0" [label="ghq", shape=ellipse]
+"0x7fefdb507da0" -> "0x7fefdb507e10"
+"0x7fefdb508e60" [label="build.ninja"]
+"0x7fefdb508010" [label="build/ninja/ninja-rules-output.txt"]
+"0x7fefdb5080d0" -> "0x7fefdb508010" [label=" mask-stdout-tee"]
+"0x7fefdb508280" [label="build/ninja/ninja-targets-output.txt"]
+"0x7fefdb5080d0" -> "0x7fefdb508280" [label=" mask-stdout-tee"]
+"0x7fefdb5084e0" [label="build/ninja/ninja.graph.dot"]
+"0x7fefdb5080d0" -> "0x7fefdb5084e0" [label=" mask-tee"]
+"0x7fefdb5086f0" [label="build/ninja/ninja.graph.png"]
+"0x7fefdb508680" [label="mask", shape=ellipse]
+"0x7fefdb508680" -> "0x7fefdb5086f0"
+"0x7fefdb5080d0" -> "0x7fefdb508680" [arrowhead=none]
+"0x7fefdb5084e0" -> "0x7fefdb508680" [arrowhead=none]
+"0x7fefdb5089f0" [label="build/README.TOC/README.TOC.md"]
+"0x7fefdb508880" -> "0x7fefdb5089f0" [label=" github-markdown-toc"]
+"0x7fefdb508880" [label="build/temp/README.md"]
+"0x7fefdb5080d0" -> "0x7fefdb508880" [label=" copy_alternate"]
+}

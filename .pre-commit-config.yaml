@@ -1,9 +1,12 @@
 repos:
   - repo: local
     hooks:
+      # start snippet jupyter-pre-commit
       - id: jupyter-nb-clear-output
         name: jupyter-nb-clear-output
         files: \.ipynb$
+        exclude: \.output\.ipynb$
         stages: [commit]
         language: system
         entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
+      # end snippet jupyter-pre-commit
