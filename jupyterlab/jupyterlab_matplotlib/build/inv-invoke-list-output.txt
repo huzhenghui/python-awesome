@@ -1,0 +1,7 @@
+Available tasks:
+
+  auto-install-matplotlib
+  invoke-list
+
+Default task: invoke-list
+
