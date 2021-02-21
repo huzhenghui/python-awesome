@@ -1,0 +1,202 @@
+builddir=./build
+mask_subcommand = --help
+mask_stdout_csv_markdowndelimiter = ","
+jupyter_nbconvert_markdown_output_files_dir=./build/jupyter-nbconvert-markdown-output-files
+
+#######################################
+# begin: rule in template
+
+rule mask
+  command = mask --maskfile $in $mask_subcommand
+
+rule mask-tee
+  command = mask --maskfile $in $mask_subcommand 2>&1 | tee $out 1> /dev/null
+
+rule mask-stdout-tee
+  command = mask --maskfile $in $mask_subcommand 2>/dev/null | tee $out 1> /dev/null
+
+rule mask-stderr-tee
+  command = bash -c 'mask $mask_subcommand 1>/dev/null 2> >(tee $out)' || echo $$?
+
+# <!-- markdownlint-disable MD013 -->
+rule mask-man-markdown
+  command = set -e && set -o pipefail && $
+    mask --maskfile $in $mask_subcommand | $
+    ul | $
+    ansifilter --bbcode | $
+    inv --search-root="$$(ghq list --full-path https://github.com/huzhenghui/pyinvoke-awesome)/bbcode" bbcode-parser-format | $
+    pandoc --from=html --to=markdown | $
+    tee $out 1> /dev/null
+# <!-- markdownlint-enable MD013 -->
+
+rule mask-stdout-csv-markdown
+  command = mask --maskfile $in $mask_subcommand 2>/dev/null | $
+    csvtomd --delimiter "$$(echo $mask_stdout_csv_markdowndelimiter)" | $
+    tee $out 1> /dev/null
+
+rule mask-stdout-json
+  command = mask --maskfile $in $mask_subcommand 2>/dev/null | $
+    jq | $
+    tee $out 1> /dev/null
+
+rule mask-screenshot
+  command = $
+    regular_logfile="./build/temp/$$(basename $out).mask-screenshot.logfile" && $
+    rm -f -v "$${regular_logfile}" && $
+    until [[ -s "$${regular_logfile}" ]]; do $
+      screen_logfile="$$(mktemp -d)/logfile"; $
+      echo "$${screen_logfile}"; $
+      mkfifo "$${screen_logfile}"; $
+      screen -L -Logfile "$${screen_logfile}" $
+        -dmS mask-screenshot-"$$(basename $out)" $
+        sh -c "stdbuf -o0 mask --maskfile $in $mask_subcommand; $
+          date +'%F %T %Z %z - %+ https://github.com/huzhenghui' | lolcat;"; $
+      dd bs=1 if="$${screen_logfile}" of="$${regular_logfile}"; $
+    done && $
+    ansifilter --html --encoding=utf8 --input="$${regular_logfile}" | $
+      tee ./build/temp/"$$(basename $out)".mask-screenshot.html | $
+      wkhtmltoimage --format png - "$out"
+
+rule pandocomatic
+  command = pandocomatic --input $in --output $out
+
+rule github-markdown-toc
+  command = gh-md-toc --hide-header --hide-footer --no-escape $in > $out
+
+rule copy_alternate
+  command = if [[ -f "$alternate" ]]; $
+    then $
+      cp "$alternate" "$out"; $
+    else $
+      cp "$in" "$out"; $
+    fi;
+
+rule dot
+  command = dot -Tpng -o$out $in
+
+rule ghq
+  command = ghq get --update "$repository" && $
+    find -d "$link_dirname" -exec rmdir {} \; && $
+    ln -Fs "$$(ghq list --full-path $repository)" "$link_dirname"
+  generator = 1
+
+rule cmdshelf-repository
+  command = $$( $
+    cmdshelf remote list | ack "^$cmdshelf_name" 1>&2 || $
+    cmdshelf remote add "$cmdshelf_name" "$cmdshelf_url" 1>&2 $
+    ) && $
+    repository_path="$$(realpath $${HOME}/.cmdshelf/remote/$cmdshelf_name)" && $
+    echo "$${repository_path}" && $
+    stub_path="$$(realpath ./build/$cmdshelf_name)" && $
+    echo "$${stub_path}" && $
+    find -d "$${stub_path}" -exec rmdir {} \; && $
+    ln -Fs "$${repository_path}" "$${stub_path}"
+  generator = 1
+
+# <!-- markdownlint-disable MD013 -->
+rule jupyter-nbconvert-markdown
+  command = jupyter nbconvert $
+    --to=markdown $
+    --NbConvertApp.output_files_dir="$jupyter_nbconvert_markdown_output_files_dir" $
+    --output="$out" $
+    "$in"
+# <!-- markdownlint-enble MD013 -->
+
+# end: rule in template
+#######################################
+
+#######################################
+# start snippet custom-rule
+
+# custom rule here
+
+# end snippet custom-rule
+#######################################
+
+#######################################
+# start snippet build-all
+
+build all: phony README.md
+
+default all
+
+# end snippet build-all
+#######################################
+
+#######################################
+# start snippet custom-build
+
+# custom build here
+
+# end snippet custom-build
+#######################################
+
+#######################################
+# start snippet report-build
+
+# report build here
+
+# end snippet report-build
+#######################################
+
+#######################################
+# begin: readme-build in template
+
+# ninja will create ./build/pandoc-lua-filters/include-files/ automatically
+build ./build/pandoc-lua-filters/include-files/include-files.lua : ghq
+  repository = https://github.com/pandoc/lua-filters
+  link_dirname = ./build/pandoc-lua-filters
+
+build ./build/ninja/ninja-rules-output.txt : mask-stdout-tee ./maskfile.md
+  mask_subcommand = ninja-rules
+
+build ./build/ninja/ninja-targets-output.txt : mask-stdout-tee ./maskfile.md
+  mask_subcommand = ninja-targets
+
+build ./build/ninja/ninja.graph.dot : mask-tee ./maskfile.md
+  mask_subcommand = ninja-graph-dot
+
+build ./build/ninja/ninja.graph.png : mask ./maskfile.md | ./build/ninja/ninja.graph.dot
+  mask_subcommand = ninja-graph-png
+
+build ./build/temp/README.md : copy_alternate ./maskfile.md
+  alternate = ./README.md
+
+build ./build/README.TOC/README.TOC.md : github-markdown-toc ./build/temp/README.md
+
+build README-template : phony $
+  ./build/pandoc-lua-filters/include-files/include-files.lua $
+  ./build.ninja $
+  ./build/ninja/ninja-rules-output.txt $
+  ./build/ninja/ninja-targets-output.txt $
+  ./build/ninja/ninja.graph.dot $
+  ./build/ninja/ninja.graph.png $
+  ./build/README.TOC/README.TOC.md $
+
+# end: readme-build in template
+#######################################
+
+#######################################
+# start snippet custom-readme-build
+
+build ./pandas.md : jupyter-nbconvert-markdown ./pandas.ipynb
+
+build ./build/inv-invoke-list-output.txt : mask-stdout-tee ./maskfile.md
+  mask_subcommand = inv-invoke-list
+
+build README-custom : phony $
+  ./pandas.md $
+  ./build/inv-invoke-list-output.txt
+
+# end snippet custom-readme-build
+#######################################
+
+#######################################
+# $ followed by a newline
+# escape the newline (continue the current line across a line break).
+# start snippet readme-build
+
+build README.md : pandocomatic maskfile.md | README-template README-custom
+
+# end snippet readme-build
+#######################################

@@ -1,0 +1,13 @@
+all: phony
+build/pandoc-lua-filters/include-files/include-files.lua: ghq
+build/ninja/ninja-rules-output.txt: mask-stdout-tee
+build/ninja/ninja-targets-output.txt: mask-stdout-tee
+build/ninja/ninja.graph.dot: mask-tee
+build/ninja/ninja.graph.png: mask
+build/temp/README.md: copy_alternate
+build/README.TOC/README.TOC.md: github-markdown-toc
+README-template: phony
+pandas.md: jupyter-nbconvert-markdown
+build/inv-invoke-list-output.txt: mask-stdout-tee
+README-custom: phony
+README.md: pandocomatic

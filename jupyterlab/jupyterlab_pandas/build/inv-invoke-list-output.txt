@@ -1,0 +1,5 @@
+Available tasks:
+
+  auto-install-pandas
+  invoke-list
+
